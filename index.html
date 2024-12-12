@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Recorte de Imagen</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Cropper.js CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <style>
+        /* Estilos personalizados */
+        .cropper-bg {
+            background-color: rgba(0, 0, 0, 0.5) !important;
+            cursor: crosshair !important;
+        }
+
+        .cropper-crop-box {
+            cursor: move !important;
+        }
+
+        #cropper-container {
+            position: relative;
+            max-width: 70%;
+            min-height: 500px;
+            max-height: 500px;
+            /* Restricción de altura máxima */
+            overflow: hidden;
+            /* Evitar que se salga del contenedor */
+            border: 2px dashed #ccc;
+            margin: 0 auto;
+            cursor: pointer;
+        }
+
+        #image {
+            max-width: 100%;
+            max-height: 100%;
+            /* Ajustar la imagen al contenedor */
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Manipulación de Imágenes</h1>
+
+    <!-- Botón para abrir el modal -->
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#imageModal">
+        Abrir Editor de Imagen
+    </button>
+
+    <!-- Modal -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Imagen</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Contenedor de Cropper -->
+                    <div id="cropper-container" class="text-center d-flex align-items-center justify-content-center"
+                        style="position: relative; max-width: 70%; min-height: 500px; border: 2px dashed #ccc; margin: 0 auto; cursor: pointer;">
+                        <p id="placeholder-text"
+                            style="position: absolute; color: #666; font-size: 18px; font-weight: bold;">Seleccionar
+                            imagen
+                        </p>
+                        <img id="image" src="" alt="Imagen a recortar"
+                            style="max-width: 100%; max-height: 100%; display: none;">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <input type="file" id="fileInput" accept="image/*" style="display:none;">
+                    <button type="button" id="uploadButton" class="btn btn-primary">Cargar Imagen</button>
+                    <button type="button" id="clearSelectionButton" class="btn btn-warning" disabled>Clear
+                        Selection</button>
+                    <button type="button" id="cropButton" class="btn btn-success" disabled>Recortar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS y Cropper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+    <!-- Script Principal -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const fileInput = document.getElementById("fileInput");
+            const cropperContainer = document.getElementById("cropper-container");
+            const placeholderText = document.getElementById("placeholder-text");
+            const image = document.getElementById("image");
+            const cropButton = document.getElementById("cropButton");
+            const uploadButton = document.getElementById("uploadButton");
+            const clearSelectionButton = document.getElementById("clearSelectionButton");
+            const modal = document.getElementById("imageModal");
+            let cropper;
+            let imageLoaded = false; // Variable para controlar si hay una imagen cargada
+
+            // Habilitar Drag and Drop en el contenedor
+            cropperContainer.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                cropperContainer.style.borderColor = "green";
+            });
+
+            cropperContainer.addEventListener("dragleave", () => {
+                cropperContainer.style.borderColor = "#ccc";
+            });
+
+            cropperContainer.addEventListener("drop", (e) => {
+                e.preventDefault();
+                cropperContainer.style.borderColor = "#ccc";
+
+                const file = e.dataTransfer.files[0];
+                if (file && file.type.startsWith("image/")) {
+                    loadImage(file);
+                } else {
+                    alert("Por favor, selecciona un archivo de imagen válido.");
+                }
+            });
+
+            // Función para cargar la imagen
+            function loadImage(file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    image.src = event.target.result;
+                    image.onload = () => {
+                        // Verificar y ajustar dimensiones si exceden el área permitida
+                        const containerHeight = 500; // Altura máxima permitida
+                        if (image.naturalHeight > containerHeight) {
+                            const scale = containerHeight / image.naturalHeight;
+                            image.style.transform = `scale(${scale})`; // Escalar imagen proporcionalmente
+                        } else {
+                            image.style.transform = "none"; // Restablecer escala si no es necesario
+                        }
+
+                        image.style.display = "block";
+                        placeholderText.style.display = "none";
+                        imageLoaded = true; // Marcar que ya hay una imagen cargada
+                        cropButton.disabled = false;
+                        clearSelectionButton.disabled = false;
+
+                        // Inicializar Cropper.js
+                        if (cropper) {
+                            cropper.destroy();
+                        }
+                        cropper = new Cropper(image, {
+                            aspectRatio: null,
+                            viewMode: 1,
+                            autoCropArea: 0.8,
+                            dragMode: "move",
+                            cropBoxResizable: true,
+                            cropBoxMovable: true,
+                            zoomOnWheel: true,
+                            toggleDragModeOnDblclick: false,
+                        });
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // Abrir selector de archivos al hacer clic en el contenedor
+            cropperContainer.addEventListener("click", () => {
+                if (!imageLoaded) {
+                    fileInput.click();
+                } else {
+                    console.log("Ya hay una imagen cargada");
+                }
+            });
+
+            // Abrir selector de archivos al hacer clic en el botón
+            uploadButton.addEventListener("click", () => {
+                fileInput.click();
+            });
+
+            // Cargar la imagen y mostrarla en el contenedor
+            fileInput.addEventListener("change", (e) => {
+                const file = e.target.files[0];
+                if (file && file.type.startsWith("image/")) {
+                    loadImage(file);
+                } else {
+                    alert("Por favor, selecciona un archivo de imagen válido.");
+                }
+            });
+
+            // Botón de recortar la imagen
+            cropButton.addEventListener("click", () => {
+                if (cropper) {
+                    const canvas = cropper.getCroppedCanvas();
+                    canvas.toBlob((blob) => {
+                        console.log("Imagen recortada lista:", blob); // Aquí puedes manejar el blob
+                    });
+                }
+            });
+
+            // Evento para limpiar la imagen al cerrar el modal
+            modal.addEventListener("hidden.bs.modal", () => {
+                console.log("Modal cerrado, limpiando imagen...");
+                clearImage();
+            });
+
+            // Botón de borrar la selección actual
+            clearSelectionButton.addEventListener("click", () => {
+                console.log("Botón Clear Selection presionado");
+
+                if (cropper) {
+                    // Obtener datos de la selección
+                    const cropBoxData = cropper.getCropBoxData();
+                    const canvasData = cropper.getCanvasData();
+
+                    console.log("Datos de la selección:", cropBoxData);
+                    console.log("Datos del canvas:", canvasData);
+
+                    // Crear un canvas del tamaño de la imagen original
+                    const canvas = document.createElement("canvas");
+                    const ctx = canvas.getContext("2d");
+
+                    canvas.width = image.naturalWidth;
+                    canvas.height = image.naturalHeight;
+
+                    console.log("Dimensiones del Canvas:", canvas.width, canvas.height);
+
+                    // Dibujar la imagen completa en el canvas
+                    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+                    // Calcular coordenadas ajustadas al tamaño real de la imagen
+                    const scaleX = image.naturalWidth / canvasData.width;
+                    const scaleY = image.naturalHeight / canvasData.height;
+
+                    const left = (cropBoxData.left - canvasData.left) * scaleX;
+                    const top = (cropBoxData.top - canvasData.top) * scaleY;
+                    const rectWidth = cropBoxData.width * scaleX;
+                    const rectHeight = cropBoxData.height * scaleY;
+
+                    console.log("Coordenadas ajustadas del rectángulo:", {
+                        left,
+                        top,
+                        rectWidth,
+                        rectHeight,
+                    });
+
+                    // Dibujar un rectángulo blanco sobre el área seleccionada
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(left, top, rectWidth, rectHeight);
+
+                    // Convertir el canvas a imagen y actualizar en el Cropper.js
+                    const modifiedImage = canvas.toDataURL("image/png");
+                    image.src = modifiedImage;
+
+                    // Reinicializar el Cropper.js con la nueva imagen
+                    cropper.destroy();
+                    cropper = new Cropper(image, {
+                        aspectRatio: null,
+                        viewMode: 1,
+                        autoCropArea: 0.8,
+                        dragMode: "move",
+                        cropBoxResizable: true,
+                        cropBoxMovable: true,
+                        zoomOnWheel: true,
+                        toggleDragModeOnDblclick: false,
+                    });
+                }
+            });
+
+            // Función para limpiar la imagen cargada
+            function clearImage() {
+                if (cropper) {
+                    cropper.destroy();
+                    cropper = null;
+                }
+                image.src = "";
+                image.style.display = "none";
+                placeholderText.style.display = "block";
+                cropButton.disabled = true;
+                clearSelectionButton.disabled = true;
+                fileInput.value = "";
+                imageLoaded = false; // Marcar que no hay imagen cargada
+            }
+        });
+    </script>
+
+</body>
+
+</html>

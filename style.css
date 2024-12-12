@@ -1,0 +1,41 @@
+#cropper-container img {
+  max-width: 100%;
+}
+
+.cropper-crop-box,
+.cropper-view-box {
+  border: 1px solid #ff5722 !important;
+}
+
+.cropper-center {
+  background-color: #ff5722 !important;
+  width: 2px !important;
+  height: 2px !important;
+}
+
+.cropper-bg {
+  background-color: rgba(
+    0,
+    0,
+    0,
+    0.5
+  ) !important; /* Fondo oscuro semitransparente */
+  cursor: url("https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Simple_black_cross.svg/64px-Simple_black_cross.svg.png")
+      32 32,
+    crosshair !important; /* Cursor visible */
+}
+
+/* Cursor en la caja seleccionada */
+.cropper-crop-box {
+  cursor: move !important; /* Cursor en el área seleccionada */
+}
+
+#cropper-container {
+  max-width: 70%;
+  min-height: 300px;
+  max-height: 400px;
+  margin-left: auto;
+  margin-right: auto;
+  border: 2px dashed rgba(120, 120, 121, 0.897);
+  /* border-radius: 0.5rem; */
+}
